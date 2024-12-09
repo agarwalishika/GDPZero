@@ -108,7 +108,7 @@ class APIModel(GenerationModel):
 			"max_new_tokens": 100,
 			"temperature": 0.7,
 			"repetition_penalty": 1.2,
-			"return_full_text": False
+			# "return_full_text": False
 		}
 		return
 
@@ -372,10 +372,12 @@ class LocalModel(GenerationModel):
 			# "return_full_text": False  # not available for manual generation
 		}
 
+	def chat_generate(self, input_text:str, **gen_args):
+		return self.generate(input_text, **gen_args)
 	def generate(self, input_text:str, **gen_args):
 		# override if gen_args specified
 		gen_params = {**self.inference_args, **gen_args}
-		inputs = self.tokenizer([input_text], return_tensors='pt', truncation=True, max_length=self.input_max_len)
+		inputs = self.tokenizer([process_message(input_text)], return_tensors='pt', truncation=True, max_length=self.input_max_len)
 		if self.cuda:
 			inputs = {k: v.cuda() for k, v in inputs.items()}
 		
@@ -388,3 +390,9 @@ class LocalModel(GenerationModel):
 		for resp in gen_resps:
 			gen_output.append({"generated_text": resp})
 		return gen_output
+
+def process_message(messages):
+	message_str = ""
+	for m in messages:
+		message_str+= f'{m['role']}: {m['content']}\n'
+	return message_str

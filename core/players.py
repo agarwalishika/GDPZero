@@ -11,7 +11,6 @@ from collections import Counter
 
 logger = logging.getLogger(__name__)
 
-
 class DialogPlanner(ABC):
 	@abstractmethod
 	def get_valid_moves(self, state):
@@ -52,7 +51,7 @@ class P4GSystemPlanner(DialogPlanner):
 		self.inf_args = {
 			"max_new_tokens": 8,
 			"temperature": 1.0,
-			"return_full_text": False,
+			# "return_full_text": False,
 			"do_sample": True,
 			"num_return_sequences": 15,
 		}
@@ -150,7 +149,7 @@ class P4GSystemPlanner(DialogPlanner):
 		inf_args = {
 			"max_new_tokens": 8,
 			"temperature": 1.1,
-			"return_full_text": False,
+			# "return_full_text": False,
 			"do_sample": True,
 			"num_return_sequences": 10,
 		}
@@ -201,9 +200,9 @@ class P4GChatSystemPlanner(P4GSystemPlanner):
 		self.inf_args = {
 			"max_new_tokens": 12,
 			"temperature": 1.0,
-			"return_full_text": False,
+			# "return_full_text": False,
 			"do_sample": True,
-			"num_return_sequences": 15,
+			# "num_return_sequences": 15,
 		}
 		return
 	
@@ -366,9 +365,9 @@ class P4GChatSystemPlanner(P4GSystemPlanner):
 		inf_args = {
 			"max_new_tokens": 12,
 			"temperature": 1.1,
-			"return_full_text": False,
+			# "return_full_text": False,
 			"do_sample": True,
-			"num_return_sequences": 10,
+			# "num_return_sequences": 10,
 		}
 		data = self.generation_model.chat_generate(messages, **inf_args)
 		sampled_das = self._get_user_generated_da(data)
@@ -434,7 +433,7 @@ class PersuaderModel(DialogModel):
 			"temperature": 0.0,
 			"repetition_penalty": 1.0,
 			"do_sample": False,  # otherwise tree will never go to the next level
-			"return_full_text": False,
+			# "return_full_text": False,
 			**inference_args
 		}
 		return
@@ -508,7 +507,7 @@ class PersuaderChatModel(PersuaderModel):
 			"temperature": 0.0,
 			"repetition_penalty": 1.0,
 			"do_sample": False,  # otherwise tree will never go to the next level, unless you do OpenLoop search
-			"return_full_text": False,
+			# "return_full_text": False,
 			**inference_args
 		}
 		self.task_prompt = """
@@ -846,15 +845,17 @@ class PersuadeeChatModel(PersuadeeModel):
 		]
 		new_dialog_session = self.__truncate_heuristics_dialog(state, -1)
 		messages += self.__process_heuristics_chat_exp(new_dialog_session)[:-1]
+		# messages_str = process_message(messages)
 
 		# majority vote, same as value function
 		inf_args = {
 			"max_new_tokens": 5,
 			"temperature": 0.7,
-			"return_full_text": False,
+			# "return_full_text": False,
 			"do_sample": True,
-			"num_return_sequences": 5,
+			# "num_return_sequences": 5,
 		}
+        
 		datas = self.backbone_model.chat_generate(messages, **inf_args)
 		# process into das
 		sampled_das: list = []

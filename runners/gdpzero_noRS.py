@@ -55,7 +55,7 @@ def main(cmd_args):
 		inference_args={
 			"temperature": 0.7,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		}
 	)
 	user = UsrModel(
@@ -65,7 +65,7 @@ def main(cmd_args):
 			"temperature": 1.1,
 			"repetition_penalty": 1.0,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		},
 		backbone_model=backbone_model, 
 		conv_examples=[exp_1]

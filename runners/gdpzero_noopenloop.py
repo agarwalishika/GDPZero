@@ -60,7 +60,7 @@ def main(cmd_args):
 			"temperature": 1.0,
 			"repetition_penalty": 1.0,
 			"do_sample": False,  # for MCTS closed loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		},
 		backbone_model=backbone_model, 
 		conv_examples=[exp_1]

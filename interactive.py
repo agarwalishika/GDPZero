@@ -43,7 +43,7 @@ def play_gdpzero(backbone_model, args):
 		inference_args={
 			"temperature": 0.7,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		}
 	)
 	user = PersuadeeChatModel(
@@ -53,7 +53,7 @@ def play_gdpzero(backbone_model, args):
 			"temperature": 1.1,
 			"repetition_penalty": 1.0,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		},
 		backbone_model=backbone_model, 
 		conv_examples=[exp_1]
@@ -75,7 +75,7 @@ def play_gdpzero(backbone_model, args):
 	print("You are now the Persuadee. Type 'q' to quit, and 'r' to restart.")
 	print("Persuader: Hello. How are you?")
 
-	your_utt = input("You: ")
+	your_utt = "good hbu" #input("You: ")
 	while your_utt.strip() != "q":
 		if your_utt.strip() == "r":
 			state = game.init_dialog()
@@ -135,7 +135,7 @@ def play_raw_prompt(backbone_model):
 			"temperature": 1.1,
 			"repetition_penalty": 1.0,
 			"do_sample": True,
-			"return_full_text": False,
+			# "return_full_text": False,
 		},
 		backbone_model=backbone_model, 
 		conv_examples=[exp_1]
@@ -188,6 +188,8 @@ def main(args):
 		backbone_model = OpenAIChatModel(args.llm, args.gen_sentences)
 	elif args.llm == 'chatgpt':
 		backbone_model = AzureOpenAIChatModel(args.llm, args.gen_sentences)
+	elif args.llm == "local":
+		backbone_model = LocalModel(model_name="mistralai/Mistral-7B-Instruct-v0.1")
 
 	if args.algo == 'gdpzero':
 		print("using GDPZero as planning algorithm")
@@ -204,7 +206,7 @@ if __name__ == "__main__":
 	parser.add_argument("--log", type=int, default=logging.WARNING, help="logging mode", choices=[logging.INFO, logging.DEBUG, logging.WARNING])
 	parser.add_argument("--algo", type=str, default='gdpzero', choices=['gdpzero', 'raw-prompt'], help="planning algorithm")
 	# used by PDP-Zero
-	parser.add_argument('--llm', type=str, default="gpt-3.5-turbo", choices=["code-davinci-002", "gpt-3.5-turbo", "text-davinci-002", "chatgpt"], help='OpenAI model name')
+	parser.add_argument('--llm', type=str, default="local", choices=["local", "code-davinci-002", "gpt-3.5-turbo", "text-davinci-002", "chatgpt"], help='OpenAI model name')
 	parser.add_argument('--gen_sentences', type=int, default=3, help='number of sentences to generate from the llm. Longer ones will be truncated by nltk.')
 	parser.add_argument('--num_mcts_sims', type=int, default=10, help='number of mcts simulations')
 	parser.add_argument('--max_realizations', type=int, default=3, help='number of realizations per mcts state')

@@ -48,6 +48,11 @@ def main(cmd_args):
 		SysModel = PersuaderChatModel
 		UsrModel = PersuadeeChatModel
 		SysPlanner = P4GChatSystemPlanner
+	elif cmd_args.llm == "local":
+		backbone_model = LocalModel(model_name="mistralai/Mistral-7B-Instruct-v0.1")
+		SysModel = PersuaderChatModel
+		UsrModel = PersuadeeChatModel
+		SysPlanner = P4GChatSystemPlanner
 	
 	system = SysModel(
 		sys_da,
@@ -56,7 +61,7 @@ def main(cmd_args):
 		inference_args={
 			"temperature": 0.7,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		}
 	)
 	user = UsrModel(
@@ -66,7 +71,7 @@ def main(cmd_args):
 			"temperature": 1.1,
 			"repetition_penalty": 1.0,
 			"do_sample": True,  # for MCTS open loop
-			"return_full_text": False,
+			# "return_full_text": False,
 		},
 		backbone_model=backbone_model, 
 		conv_examples=[exp_1]
@@ -225,7 +230,7 @@ def main(cmd_args):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--output', type=str, default="outputs/gdpzero.pkl", help='output file')
-	parser.add_argument('--llm', type=str, default="code-davinci-002", choices=["code-davinci-002", "chatgpt", "gpt-3.5-turbo"], help='OpenAI model name')
+	parser.add_argument('--llm', type=str, default="local", choices=["local", "code-davinci-002", "chatgpt", "gpt-3.5-turbo"], help='OpenAI model name')
 	parser.add_argument('--gen_sentences', type=int, default=-1, help='number of sentences to generate from the llm. Longer ones will be truncated by nltk.')
 	parser.add_argument('--num_mcts_sims', type=int, default=20, help='number of mcts simulations')
 	parser.add_argument('--max_realizations', type=int, default=3, help='number of realizations per mcts state')
