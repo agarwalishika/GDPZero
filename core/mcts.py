@@ -179,7 +179,7 @@ class OpenLoopMCTS(MCTS):
 		next_state = self.game.get_next_state(state, best_action)
 		return next_state
 	
-	def _update_realizations_Vs(self, state: DialogSession, v: float):
+	def _update_realizations_Vs(self, state: DialogSession, v: float, backtrack=False):
 		hashable_state = self._to_string_rep(state)
 		if hashable_state not in self.realizations_Vs:
 			self.realizations_Vs[hashable_state] = {}
@@ -193,7 +193,10 @@ class OpenLoopMCTS(MCTS):
 			self.realizations_Ns[hashable_state][sys_utt] = 0
 		# update
 		self.realizations_Ns[hashable_state][sys_utt] += 1
-		self.realizations_Vs[hashable_state][sys_utt] += (v - self.realizations_Vs[hashable_state][sys_utt]) / self.realizations_Ns[hashable_state][sys_utt]
+		if backtrack:
+			self.realizations_Vs[hashable_state][sys_utt] += v
+		else:
+			self.realizations_Vs[hashable_state][sys_utt] += (v - self.realizations_Vs[hashable_state][sys_utt]) / self.realizations_Ns[hashable_state][sys_utt]
 		return
 
 	def search(self, state:DialogSession):
@@ -247,6 +250,76 @@ class OpenLoopMCTS(MCTS):
 		self._update_realizations_Vs(next_state, v)
 		# now we are single player, hence just v instead of -v
 		return v
+	
+	def search_backtrack(self, state:DialogSession, num_backtracks):
+		hashable_state = self._to_string_rep(state)
+		
+		# check everytime since state is stochastic, does not map to hashable_state
+		terminated_v = self.game.get_dialog_ended(state)
+		# check if it is terminal node
+		if terminated_v == 1.0:
+			logger.debug("ended")
+			return terminated_v
+		
+		# otherwise, if is nontermial leaf node, we initialize and return v
+		if hashable_state not in self.P:
+			# selected leaf node, expand it
+			# first visit V because v is only evaluated once for a hashable_state
+			v = self._init_node(state)
+			return v
+		else:
+			# add only when it is new
+			self._add_new_realizations(state)
+		
+		# existing, continue selection
+		# go next state by picking best according to U(s,a)
+		best_uct = -float('inf')
+		best_action = -1
+		ucts = []
+		for a in self.valid_moves[hashable_state]:
+			Ns = self.Ns[hashable_state]
+			if Ns == 0:
+				Ns = 1e-8
+			# a variant of PUCT
+			uct = self.Q[hashable_state][a] + self.configs.cpuct * self.P[hashable_state][a] * math.sqrt(Ns) / (1 + self.Nsa[hashable_state][a])
+			ucts.append(uct)
+			if uct > best_uct:
+				best_uct = uct
+				best_action = a
+		
+		# check if backtracking is necessary
+		# considerations:
+		#		1. cannot be the first state
+		# 		2. cannot backtrack too many times
+		# 		3. backtrack when avg(ucts) - max(ucts) < threshold
+		# 		4. before backtracking, increase the Nsa of the previous "best_action"
+		# transition. For open loop, first sample from an existing realization
+		state = self._sample_realization(hashable_state)
+		next_state = self._get_next_state(state, best_action)
+		
+		# 1. if not leaf, continue traversing, and state=s will get the value from the leaf node
+		# 2. if leaf, we will expand it and return the value for backpropagation
+		v = self.search_backtrack(next_state, num_backtracks)
+		
+		backtracking = False
+		if "__" in hashable_state and num_backtracks > 0 and abs(np.array(ucts).mean() - best_uct) < self.configs.backtracking_threshold:
+			logger.debug('BACKTRACKING!')
+			self.Q[hashable_state][best_action] = 0 # idk why but i thought this was a good idea, let's see what happens
+			self.Ns[hashable_state] += 1
+			self.Nsa[hashable_state][best_action] += 1
+			self._update_realizations_Vs(next_state, 0, backtrack=True)
+			return self.search_backtrack(state, num_backtracks-1)
+		else:
+			# update stats
+			# add in new estimate and average
+			self.Q[hashable_state][best_action] = (self.Nsa[hashable_state][best_action] * self.Q[hashable_state][best_action] + v) / (self.Nsa[hashable_state][best_action] + 1)
+			self.Ns[hashable_state] += 1
+			self.Nsa[hashable_state][best_action] += 1
+
+			# update v to realizations for NLG at inference
+			self._update_realizations_Vs(next_state, v)
+			# now we are single player, hence just v instead of -v
+			return v
 	
 	def get_best_realization(self, state:DialogSession, action: int):
 		prefetch_state = self._to_string_rep(state) + "__" + self.player.dialog_acts[action]

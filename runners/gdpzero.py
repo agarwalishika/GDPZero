@@ -98,6 +98,8 @@ def main(cmd_args):
 		"num_MCTS_sims": cmd_args.num_mcts_sims,
 		"Q_0": cmd_args.Q_0,
 		"max_realizations": cmd_args.max_realizations,
+		"backtracking_threshold": 0.01,
+		"num_backtracks": 3
 	})
 
 	output = []  # for evaluation. [{did, context, ori_resp, new_resp, debug}, ...]
@@ -169,7 +171,10 @@ def main(cmd_args):
 			dialog_planner = OpenLoopMCTS(game, planner, args)
 			print("searching")
 			for i in tqdm(range(args.num_MCTS_sims)):
-				dialog_planner.search(state)
+				dialog_planner.search_backtrack(state, args.num_backtracks)
+			
+			with open('outputs/dialog_planner.pkl', 'wb+') as f:
+				pickle.dump(dialog_planner, f)
 
 			mcts_policy = dialog_planner.get_action_prob(state)
 			mcts_policy_next_da = system.dialog_acts[np.argmax(mcts_policy)]

@@ -98,7 +98,7 @@ def main(model_name):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, default="google/gemma-2-9b")
+    parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.2-1B")
     args = parser.parse_args()
 
     main(args.model_name)
